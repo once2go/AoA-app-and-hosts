@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>WebUSB HID control</title>
+</head>
+<body style="text-align: center;">
+	
+<div style="display: inline-block; vertical-align: middle;">
+	<div>
+		<button id="request-aoa" style=" margin: 1px"> Connect</button>
+ 	</div>
+	<div>
+		<button id="register-hid">Register HID</button>
+		<button id="report-hid-descriptor">Report Descriptor</button>
+		<button id="unregister-hid">Unregister HID</button>
+	</div>
+
+	 <ul>
+	  <li><button  onclick="sendHidEvent(new Uint8Array([0xE9, 0x00]))">Volume Up</button></li>
+	  <li><button  onclick="sendHidEvent(new Uint8Array([0xEA, 0x00]))">Volume down</button></li>
+
+	  <li><button  onclick="sendHidEvent(new Uint8Array([0x33, 0x02]))">Scroll Up</button></li>
+	  <li><button  onclick="sendHidEvent(new Uint8Array([0x34, 0x02]))">Scroll Down</button></li>
+	   
+
+	  <li><button  onclick="sendHidEvent(new Uint8Array([0xb0, 0x00]))">Play </button></li>
+	  <li><button  onclick="sendHidEvent(new Uint8Array([0xcd, 0x00]))">Pause</button></li>
+	</ul> 
+</div>	
+
+<script type="text/javascript">
+ //python2 -m SimpleHTTPServer in case if device disconnects will run simple server and it should work
+
+ function sendHidEvent(keycode) {
+ 		uDevice.controlTransferOut(({
+ 			requestType: 'vendor',
+    		recipient: 'device',
+    		request: 57,
+    		value: 1,
+    		index: 0
+ 		}), keycode).then(response => {  
+ 			if (response.status == "ok") {
+		          console.log("Event sended");
+ 			}
+ 		}).catch(e => {
+		  console.log("Can't send " + e);
+	    });
+
+		uDevice.controlTransferOut(({
+ 			requestType: 'vendor',
+    		recipient: 'device',
+    		request: 57,
+    		value: 1,
+    		index: 0
+ 		}), new ArrayBuffer(0)).then(response => {  
+ 			if (response.status == "ok") {
+		          console.log("Clear");
+ 			}
+ 		}).catch(e => {
+		  console.log("Can't send " + e);
+	    });
+ }
+
+ var uDevice;
+
+ document.querySelector('#request-aoa').addEventListener('click', function(event) {
+	 navigator.usb.requestDevice({filters: [
+		 	{vendorId: 0x18d1, productId: 0x2D00},
+		 	{vendorId: 0x18d1, productId: 0x2D01},
+		 	{vendorId: 0x18d1, productId: 0x2D02},
+		 	{vendorId: 0x18d1, productId: 0x2D03},
+		 	{vendorId: 0x18d1, productId: 0x2D04},
+		 	{vendorId: 0x18d1, productId: 0x2D05}
+	 	]})
+	 .then(usbDevice => {
+		  console.log("Product name: " + usbDevice.productName);
+		  uDevice = usbDevice;
+		  uDevice.open().then(function(){
+		  		console.log("connected");
+		  }).catch(e=>{console.log(e);});
+	 })
+	 .catch(e => {
+			 console.log("There is no aoa device. " + e);
+	 });
+
+  });
+
+
+ document.querySelector('#register-hid').addEventListener('click', function(event) {
+ 	console.log("register hid");
+ 	uDevice.controlTransferOut(({
+ 			requestType: 'vendor',
+    		recipient: 'device',
+    		request: 54,
+    		value: 1,
+    		index: 23 // descriptor length
+ 		}), new ArrayBuffer(0)).then(response => {  
+ 			if (response.status == "ok") {
+		      console.log("Hid registered");
+ 			}
+ 		}).catch(e => {
+		console.log("Can't send " + e);
+	  });
+ });
+
+ document.querySelector('#report-hid-descriptor').addEventListener('click', function(event) {
+ 	console.log("report descriptor");
+ 	var descriptor = new Int8Array([
+	    0x05, 0x0c,                     // Usage Page (Consumer Devices)
+	    0x09, 0x01,                     // Usage (Consumer Control)
+	    0xa1, 0x01,                     // Collection (Application)
+	    0x19, 0x00,                     // Usage Minimum (0),
+	    0x2A, 0x3C, 0x02,               // Usage Maximum (0x23C),
+	    0x15, 0x00,                     // Logical Minimum (0)
+	    0x26, 0x3C, 0x02,               // Logical Maximum (0x23C)
+	    0x75, 0x10,                     // Report Size (10)
+	    0x95, 0x01,                     // Report Count (1)
+	    0x81, 0x00,                     // Input (Data,Array,Absolute)
+	    0xC0                            // End Collection
+	]);
+	 console.log(descriptor);
+ 	 uDevice.controlTransferOut(({
+ 			requestType: 'vendor',
+    		recipient: 'device',
+    		request: 56,
+    		value: 1,
+    		index: 0
+ 		}), descriptor).then(response => {  
+ 			if (response.status == "ok") {
+		          console.log("Hid registered");
+ 			}
+ 		}).catch(e => {
+		console.log("Can't send " + e);
+	  });
+ });
+ 
+ document.querySelector('#unregister-hid').addEventListener('click', function(event) {
+ 	uDevice.controlTransferOut(({
+ 			requestType: 'vendor',
+    		recipient: 'device',
+    		request: 55,
+    		value: 1,
+    		index: 0  
+ 		}), new ArrayBuffer(0)).then(response => {  
+ 			if (response.status == "ok") {
+		      	console.log("hid unregistered");
+ 			}
+ 		}).catch(e => {
+		console.log("Can't send " + e);
+	  });
+   });
+
+
+</script>
+</body>
+</html>
