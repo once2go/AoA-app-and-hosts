@@ -76,7 +76,8 @@
 		  console.log("Product name: " + usbDevice.productName);
 		  uDevice = usbDevice;
 		  uDevice.open().then(function(){
-		  		console.log("connected");
+	                 uDevice.selectConfiguration(1);
+		  	 console.log("connected");
 		  }).catch(e=>{console.log(e);});
 	 })
 	 .catch(e => {
