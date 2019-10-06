@@ -76,21 +76,26 @@
  }
 
 function checkProtocol(usbDevice) {
-	usbDevice.controlTransferIn(({
- 			requestType: 'vendor',
-    		recipient: 'device',
-    		request: 51,
-    		value: 0,
-    		index: 0
- 		}), 2).then(response => {  
- 			console.log("Check protocol status:" + response.status);
- 			if (response.data.getInt8(0) == 2) {
- 				console.log("AoA2 available");
- 				setCredentials(usbDevice);
- 			}
- 		}).catch(e => {
-		console.log("Can't send " + e);
-	});;
+	if (usbDevice.configuration === null)
+    	usbDevice.selectConfiguration(1).then(function(){
+	    usbDevice.controlTransferIn(({
+	 		requestType: 'vendor',
+	    		recipient: 'device',
+	    		request: 51,
+	    		value: 0,
+	    		index: 0
+	 		}), 2).then(response => {  
+	 			console.log("Check protocol status:" + response.status);
+	 			if (response.data.getInt8(0) == 2) {
+	 				console.log("AoA2 available");
+	 				setCredentials(usbDevice);
+	 			}
+	 		}).catch(e => {
+			console.log("Can't send " + e);
+		});
+    }).catch(e=> {
+     	 console.log("Can't select " + e);
+    });
 }
 
 function str2ab(str) {
